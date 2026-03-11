@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, ScaleControl } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-iconmaterial/dist/leaflet.icon-material.css";
 import JohanSverdrupLayer from "./layers/JohanSverdrupLayer";
+import BrageLayer from "./layers/BrageLayer";
 import VesselsLayer from "./layers/VesselsLayer";
 import FlightsLayer from "./layers/FlightsLayer";
 import WeatherLayer from "./layers/WeatherLayer";
@@ -17,6 +18,7 @@ const DEFAULT_ZOOM = 8;
 
 export default function MapInner() {
   const johanSverdrup = useLayerStore((s) => s.johanSverdrup);
+  const brage = useLayerStore((s) => s.brage);
   const vessels = useLayerStore((s) => s.vessels);
   const flights = useLayerStore((s) => s.flights);
   const weather = useLayerStore((s) => s.weather);
@@ -35,6 +37,7 @@ export default function MapInner() {
         />
         <ScaleControl position="bottomleft" />
         {johanSverdrup && <JohanSverdrupLayer />}
+        {brage && <BrageLayer />}
         {vessels && <VesselsLayer />}
         {flights && <FlightsLayer />}
         {weather && <WeatherLayer />}

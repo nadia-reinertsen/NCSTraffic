@@ -4,6 +4,7 @@ import { useLayerStore } from "@/lib/store/layers";
 
 export default function LayerControl() {
   const johanSverdrup = useLayerStore((s) => s.johanSverdrup);
+  const brage = useLayerStore((s) => s.brage);
   const vessels = useLayerStore((s) => s.vessels);
   const flights = useLayerStore((s) => s.flights);
   const weather = useLayerStore((s) => s.weather);
@@ -20,6 +21,15 @@ export default function LayerControl() {
           className="accent-blue-600"
         />
         Johan Sverdrup
+      </label>
+      <label className="mt-1 flex cursor-pointer items-center gap-2 text-sm text-gray-600">
+        <input
+          type="checkbox"
+          checked={brage}
+          onChange={() => toggle("brage")}
+          className="accent-orange-600"
+        />
+        Brage
       </label>
       <label className="mt-1 flex cursor-pointer items-center gap-2 text-sm text-gray-600">
         <input
