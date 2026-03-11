@@ -9,12 +9,23 @@ import {
   johanSverdrupFacilities,
 } from "@/lib/data/johan-sverdrup";
 
-function facilityIcon() {
+type FacilityType = "processing" | "drilling" | "riser" | "quarters" | "wellhead";
+
+const iconConfig: Record<FacilityType, { icon: string; markerColor: string; outlineColor: string }> = {
+  processing: { icon: "local_gas_station", markerColor: "#c62828", outlineColor: "#b71c1c" },
+  drilling: { icon: "hardware", markerColor: "#e65100", outlineColor: "#bf360c" },
+  riser: { icon: "swap_vert", markerColor: "#6a1b9a", outlineColor: "#4a148c" },
+  quarters: { icon: "apartment", markerColor: "#1565c0", outlineColor: "#0d47a1" },
+  wellhead: { icon: "adjust", markerColor: "#2e7d32", outlineColor: "#1b5e20" },
+};
+
+function facilityIcon(type: FacilityType) {
+  const cfg = iconConfig[type];
   return L.IconMaterial.icon({
-    icon: "build",
+    icon: cfg.icon,
     iconColor: "#fff",
-    markerColor: "#1565c0",
-    outlineColor: "#0d47a1",
+    markerColor: cfg.markerColor,
+    outlineColor: cfg.outlineColor,
     outlineWidth: 1,
     iconSize: [31, 42],
   });
@@ -56,7 +67,7 @@ export default function JohanSverdrupLayer() {
       </Polygon>
 
       {johanSverdrupFacilities.map((facility) => (
-        <Marker key={facility.name} position={facility.position} icon={facilityIcon()}>
+        <Marker key={facility.name} position={facility.position} icon={facilityIcon(facility.type)}>
           <Popup>
             <div className="text-sm">
               <h3 className="font-bold text-base">{facility.name}</h3>

@@ -116,7 +116,6 @@ Johan Sverdrup petroleum field polygons and facilities from Sodir.no (Sokkeldire
 Flights from Flightradar, including helichopter traffic to installations on the Norwegian Continental Shelf
 All vessel traffic from Barentswatch
 All data are to be visualized on a leaflet map. 
-For more accurate icons use Leaflet.IconMaterial
 
 ## Weather data
 Use the Met API to fetch current weather conditions for locations in the North Sea. Display this data as an overlay on the map, with icons representing different weather conditions (e.g. sunny, rainy, stormy) and tooltips showing temperature, wind speed, and other relevant information.

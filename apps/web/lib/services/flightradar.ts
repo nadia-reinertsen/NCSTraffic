@@ -2,8 +2,17 @@ import type { Flight } from "@/lib/schemas/flightradar";
 
 const FEED_URL = "https://data-cloud.flightradar24.com/zones/fcgi/feed.js";
 
-// North Sea bounding box: north,south,west,east
-const BOUNDS = "62.5,56,-2,8";
+/**
+ * Split the North Sea into smaller sub-regions to avoid FR24's free-tier
+ * result-count limit for large bounding boxes.
+ * Format per FR24: "north,south,west,east"
+ */
+const SUB_BOUNDS = [
+  "59.25,56,-2,3",
+  "59.25,56,3,8",
+  "62.5,59.25,-2,3",
+  "62.5,59.25,3,8",
+];
 
 const HELICOPTER_TYPES = new Set([
   "S92",
@@ -39,8 +48,13 @@ const HELICOPTER_TYPES = new Set([
 ]);
 
 export async function fetchFlights(): Promise<Flight[]> {
-  const params = new URLSearchParams({
-    bounds: BOUNDS,
+  const headers: HeadersInit = {};
+  const token = process.env.FLIGHTRADAR24_ACCESS_TOKEN;
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const baseParams = {
     faa: "1",
     satellite: "1",
     mlat: "1",
@@ -53,49 +67,51 @@ export async function fetchFlights(): Promise<Flight[]> {
     maxage: "14400",
     gliders: "0",
     stats: "0",
-  });
+  };
 
-  const headers: HeadersInit = {};
-  const token = process.env.FLIGHTRADAR24_ACCESS_TOKEN;
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
+  const results = await Promise.allSettled(
+    SUB_BOUNDS.map(async (bounds) => {
+      const params = new URLSearchParams({ ...baseParams, bounds });
+      const response = await fetch(`${FEED_URL}?${params}`, { headers });
+      if (!response.ok) throw new Error(`FR24 API failed: ${response.status}`);
+      return response.json() as Promise<Record<string, unknown>>;
+    }),
+  );
 
-  const response = await fetch(`${FEED_URL}?${params}`, { headers });
-
-  if (!response.ok) {
-    throw new Error(`FR24 API failed: ${response.status}`);
-  }
-
-  const raw: Record<string, unknown> = await response.json();
+  const seen = new Set<string>();
   const flights: Flight[] = [];
 
-  for (const [key, value] of Object.entries(raw)) {
-    if (!Array.isArray(value) || value.length < 18) continue;
+  for (const result of results) {
+    if (result.status !== "fulfilled") continue;
+    for (const [key, value] of Object.entries(result.value)) {
+      if (!Array.isArray(value) || value.length < 18) continue;
+      if (seen.has(key)) continue;
+      seen.add(key);
 
-    const lat = Number(value[1]);
-    const lon = Number(value[2]);
-    if (lat === 0 && lon === 0) continue;
+      const lat = Number(value[1]);
+      const lon = Number(value[2]);
+      if (lat === 0 && lon === 0) continue;
 
-    const aircraftType = String(value[8] ?? "");
+      const aircraftType = String(value[8] ?? "");
 
-    flights.push({
-      id: key,
-      icao24: String(value[0] ?? ""),
-      latitude: lat,
-      longitude: lon,
-      heading: Number(value[3]),
-      altitude: Number(value[4]),
-      groundSpeed: Number(value[5]),
-      aircraftType,
-      registration: String(value[9] ?? ""),
-      origin: String(value[11] ?? ""),
-      destination: String(value[12] ?? ""),
-      flightNumber: String(value[13] ?? ""),
-      callsign: String(value[16] ?? ""),
-      verticalSpeed: Number(value[15] ?? 0),
-      isHelicopter: HELICOPTER_TYPES.has(aircraftType.toUpperCase()),
-    });
+      flights.push({
+        id: key,
+        icao24: String(value[0] ?? ""),
+        latitude: lat,
+        longitude: lon,
+        heading: Number(value[3]),
+        altitude: Number(value[4]),
+        groundSpeed: Number(value[5]),
+        aircraftType,
+        registration: String(value[9] ?? ""),
+        origin: String(value[11] ?? ""),
+        destination: String(value[12] ?? ""),
+        flightNumber: String(value[13] ?? ""),
+        callsign: String(value[16] ?? ""),
+        verticalSpeed: Number(value[15] ?? 0),
+        isHelicopter: HELICOPTER_TYPES.has(aircraftType.toUpperCase()),
+      });
+    }
   }
 
   return flights;

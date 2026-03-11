@@ -24,7 +24,7 @@ export default function FlightsLayer() {
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch("/api/flights");
+      const res = await fetch("/api/flights?helicopters=true");
       if (!res.ok) return;
       const data = await res.json();
       setFlights(data);
